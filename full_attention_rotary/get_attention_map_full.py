@@ -1,24 +1,17 @@
-from argparse import Namespace
-import torch.nn.functional as F
-
-from tokenizer.tokenizer import MolTranBertTokenizer
-from utils import normalize_smiles
-import torch
-import shutil
-from torch import nn
-import args
 import os
-import getpass
-from datasets import load_dataset, concatenate_datasets, load_from_disk
+import shutil
+from argparse import Namespace
 
+import torch
+import torch.nn.functional as F
 from fast_transformers.builders import TransformerEncoderBuilder
 from fast_transformers.masking import FullMask, LengthMask as LM
-from rotate_attention.rotate_builder import RotateEncoderBuilder as rotate_builder
-from fast_transformers.feature_maps import Favor, GeneralizedRandomFeatures
-from functools import partial
-import rotate_attention.full_attention
+from torch import nn
 
-from torch.utils.data import DataLoader
+import full_attention_rotary.args as args
+from full_attention_rotary.rotate_attention.rotate_builder import RotateEncoderBuilder as rotate_builder
+from full_attention_rotary.tokenizer.tokenizer import MolTranBertTokenizer
+from full_attention_rotary.utils import normalize_smiles
 
 
 class TestBert(nn.Module):
@@ -144,54 +137,6 @@ class lm_layer(nn.Module):
         return tensor
 
 
-def get_database(config):
-    pubchem_path = {
-        "train": "/dccstor/trustedgen/data/pubchem/CID-SMILES-CANONICAL.smi"
-    }
-    if "CANONICAL" in pubchem_path:
-        pubchem_script = "./pubchem_canon_script.py"
-    else:
-        pubchem_script = "./pubchem_script.py"
-        dataset_dict = load_dataset(
-            pubchem_script,
-            data_files=pubchem_path,
-            cache_dir=os.path.join(
-                "/tmp", getpass.getuser(), "pubchem_{}".format(config.chunk_num)
-            ),
-            split="train",
-        )
-    train_config = {
-        "batch_size": config.n_batch,
-        "shuffle": False,
-        "num_workers": config.n_workers,
-        "pin_memory": True,
-    }
-    # loader =  DataLoader(dataset_dict, **train_config)
-    print(dataset_dict.cache_files)
-    cache_files = []
-    for cache in dataset_dict.cache_files:
-        tmp = "/".join(cache["filename"].split("/")[:4])
-        print(tmp)
-        cache_files.append(tmp)
-
-    print("dataset length {}".format(len(dataset_dict)))
-    if 50000 * config.chunk_num > len(dataset_dict):
-        index_end = 0
-        loader = None
-    elif 50000 + 50000 * config.chunk_num > len(dataset_dict):
-        index_end = 50000 + 50000 * config.chunk_num - len(dataset_dict)
-        index = [i + (50000 * config.chunk_num) for i in range(index_end)]
-        loader = torch.utils.data.Subset(dataset_dict, index)
-        loader = DataLoader(loader, **train_config)
-    else:
-        index_end = 50000
-        index = [i + (50000 * config.chunk_num) for i in range(index_end)]
-        loader = torch.utils.data.Subset(dataset_dict, index)
-        loader = DataLoader(loader, **train_config)
-    # index= [i+(50000*config.chunk_num) for i in range(index_end)])
-    return loader, cache_files
-
-
 def get_bert(config, tokenizer):
     bert_model = (
         TestBert(
@@ -230,7 +175,8 @@ def get_tokens_from_ids(input_ids, tokenizer):
 
 def get_full_attention(molecule):
     config = args.parse_args()
-    config.device = "cpu"
+    # ToDo delete this workaroung
+    config.device = "cuda" if torch.cuda.is_available() else "cpu"
     model_path = config.seed_path
     device = config.device
     batch_size = config.batch_size
@@ -239,7 +185,7 @@ def get_full_attention(molecule):
     mask = config.mask
 
     loader = None
-    tokenizer = MolTranBertTokenizer("bert_vocab.txt")
+    tokenizer = MolTranBertTokenizer("./full_attention_rotary/bert_vocab.txt")
     bert_model = get_bert(config, tokenizer)
 
     batch_total = 0

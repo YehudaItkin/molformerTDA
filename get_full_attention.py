@@ -1,7 +1,7 @@
 import numpy as np
 from rdkit import Chem
 
-from get_attention_map_full import get_full_attention
+from full_attention_rotary.get_attention_map_full import get_full_attention
 
 
 def get_bonds_mat(seq):
