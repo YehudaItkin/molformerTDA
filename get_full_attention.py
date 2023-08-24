@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 from rdkit import Chem
 
 from full_attention_rotary.get_attention_map_full import get_full_attention
@@ -45,6 +46,30 @@ def main():
     sequence = sequences[seq_idx]
 
     attentions, tokens = get_full_attention(sequence)
+
+    bonds_mat, gold_tokens = get_bonds_mat(sequence)
+    # ignore_tokens = []
+    ignore_tokens = ["(", ")", "=", ""]
+    ignore_tokens += ["1", "2", ]
+    ignore_tokens += ["<eos>", "<bos>"]
+
+    output = {}
+    for layer_idx in range(len(attentions)):
+        some_layer = attentions[layer_idx].squeeze()
+        tensor = torch.mean(some_layer, dim=0)
+
+        tensor = ((tensor + torch.transpose(tensor, 0, 1)) / 2).cpu()
+        tensor.fill_diagonal_(0.0)
+        tensor = tensor.numpy()
+
+        tensor, filtered_tokens = filter_unwanted_tokens(tensor, tokens, ignore_tokens)
+        output[layer_idx] = dict()
+        output[layer_idx]['attention'] = tensor
+        output[layer_idx]['bonds_mat'] = bonds_mat
+        output[layer_idx]['filtered_tokens'] = filtered_tokens
+        output[layer_idx]['gold_tokens'] = gold_tokens
+
+    torch.save(output, "full_att.pth")
 
 
 if __name__ == "__main__":
