@@ -2,3 +2,5 @@
 ./data/checkpoints/*
 .ipynb_checkpoints
 .ipynb_checkpoints/*
+*.ckpt
+*.pth
