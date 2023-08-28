@@ -34,7 +34,6 @@ def work_on_dataset(args):
             output['smiles'] = smiles
             output['ignore_tokens'] = args.ignore_tokens
             full_output.append(output)
-            break
 
         output_filename = f"{dataset_type}_{args.attention_type.lower()}"
         if args.ignore_tokens:
