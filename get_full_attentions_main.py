@@ -5,8 +5,7 @@ from argparse import Namespace
 import pandas as pd
 import torch
 
-from get_full_attention import get_full_attention_matrices
-from get_linear_attention import get_linear_attention_matrices
+from full_attention import get_full_attention_matrices
 
 IGNORE_TOKENS = ["(", ")", "=", ""]
 IGNORE_TOKENS += ["1", "2", ]
@@ -16,7 +15,7 @@ IGNORE_TOKENS += ["<eos>", "<bos>"]
 def work_on_dataset(args):
     dataset_path = args.dataset_path
     basename = dataset_path.split("/")[-1]
-    output_dir = os.path.join("output", basename)
+    output_dir = os.path.join(args.outdir, basename)
     os.makedirs(output_dir, exist_ok=True)
     full_output = []
     for fname in glob.glob(os.path.join(dataset_path, "*.csv")):
@@ -27,9 +26,7 @@ def work_on_dataset(args):
             smiles = row[1]['smiles']
             name = row[1]['smiles']
             print(f"working on {name} ({smiles})")
-            if args.attention_type.lower() == "linear":
-                output = get_linear_attention_matrices(smiles, args.ignore_tokens)
-            elif args.attention_type.lower() == "full":
+            if args.attention_type.lower() == "full":
                 output = get_full_attention_matrices(smiles, args.ignore_tokens)
             else:
                 raise Exception(f"Unknown attention type {args.attention_type}")
@@ -38,16 +35,25 @@ def work_on_dataset(args):
             output['ignore_tokens'] = args.ignore_tokens
             full_output.append(output)
 
-        output_filename = f"{dataset_type} + {args.attention_type.lower()}"
+        output_filename = f"{dataset_type}_{args.attention_type.lower()}"
         if args.ignore_tokens:
             output_filename += "_ignore_tokens"
         else:
             output_filename += "_all_tokens"
         output_filename += ".pth"
-        torch.save(output_dir, output_filename)
+        output_filename = os.path.join(output_dir, output_filename)
+        print(f"Writing to {output_filename}")
+        torch.save(full_output, output_filename)
+
+
 def main():
     args = Namespace()
+    args.outdir = "output"
     args.ignore_tokens = IGNORE_TOKENS
-    args.attention_type = "linear"
+    args.attention_type = "full"
     args.dataset_path = "./data/data/esol"
     work_on_dataset(args)
+
+
+if __name__ == "__main__":
+    main()

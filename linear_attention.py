@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from rdkit import Chem
 
-from linear_attention_rotary.get_attention_map_full import get_full_attention
+from linear_attention_rotary.get_attention_map_full import get_linear_attention
 
 
 def get_bonds_mat(seq):
@@ -40,9 +40,8 @@ def filter_unwanted_tokens(tensor, tokens, ignore_tokens):
     return tensor[wanted_idx, :][:, wanted_idx], wanted_tokens
 
 
-
 def get_linear_attention_matrices(sequence, ignore_tokens):
-    attentions, tokens = get_full_attention(sequence)
+    attentions, tokens = get_linear_attention(sequence)
 
     bonds_mat, gold_tokens = get_bonds_mat(sequence)
 
@@ -72,7 +71,7 @@ def main():
     seq_idx = 0
     sequence = sequences[seq_idx]
 
-    attentions, tokens = get_full_attention(sequence)
+    attentions, tokens = get_linear_attention(sequence)
 
     bonds_mat, gold_tokens = get_bonds_mat(sequence)
     # ignore_tokens = []
