@@ -139,7 +139,7 @@ def get_parser(parser=None):
     parser.add_argument(
         "--seed_path",
         type=str,
-        default="../../data/checkpoints/linear_rotary.ckpt",
+        default="./data/checkpoints/linear_rotary.ckpt",
         help="path to  trainer file to continue training",
     )
     parser.add_argument(
@@ -272,7 +272,7 @@ def get_parser(parser=None):
     parser.add_argument(
         "--smiles_embedding",
         type=str,
-        default="../../data/etc/ba_embeddings_tanh_512_2986138_2.pt",
+        default="./data/etc/ba_embeddings_tanh_512_2986138_2.pt",
     )
     # parser.add_argument("--train_pct", type=str, required=False, default="95")
     parser.add_argument("--aug", type=int, required=False)
@@ -287,7 +287,7 @@ def get_parser(parser=None):
         "--data_root",
         type=str,
         required=False,
-        default="../../data/etc/affinity",
+        default="./data/etc/affinity",
     )
     parser.add_argument("--use_linear", type=int, default=0)
 

@@ -148,7 +148,7 @@ def get_bert(config, tokenizer):
         .to(config.device)
         .eval()
     )
-    tmp_model = torch.load(config.seed_path, map_location=torch.device('cpu'))["state_dict"]
+    tmp_model = torch.load(config.seed_path, map_location=torch.device(config.device))["state_dict"]
     bert_model.load_state_dict(tmp_model, strict=False)
     return bert_model
 
