@@ -1,4 +1,4 @@
 .idea
-./data/checkpoints/*
 .ipynb_checkpoints
-.ipynb_checkpoints/*
+data
+data/Pretrained MoLFormer
