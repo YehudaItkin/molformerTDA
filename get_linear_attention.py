@@ -1,16 +1,8 @@
-from bertviz import head_view
-from linear_attention_rotary.get_attention_map_full import get_full_attention
-
-import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-
-from rdkit import Chem
-from rdkit.Chem import rdmolops
-from rdkit.Chem import AllChem
-from rdkit.Chem import rdMolTransforms
-
 import torch
+from rdkit import Chem
+
+from linear_attention_rotary.get_attention_map_full import get_full_attention
 
 
 def get_bonds_mat(seq):
@@ -46,6 +38,33 @@ def filter_unwanted_tokens(tensor, tokens, ignore_tokens):
             wanted_tokens.append(token)
 
     return tensor[wanted_idx, :][:, wanted_idx], wanted_tokens
+
+
+
+def get_linear_attention_matrices(sequence, ignore_tokens):
+    attentions, tokens = get_full_attention(sequence)
+
+    bonds_mat, gold_tokens = get_bonds_mat(sequence)
+
+    output = {}
+    for layer_idx in range(len(attentions)):
+        some_layer = attentions[layer_idx].squeeze()
+        tensor = torch.mean(some_layer, dim=0)
+
+        tensor = ((tensor + torch.transpose(tensor, 0, 1)) / 2).cpu()
+        tensor.fill_diagonal_(0.0)
+        tensor = tensor.numpy()
+
+        tensor, filtered_tokens = filter_unwanted_tokens(tensor, tokens, ignore_tokens)
+        output[layer_idx] = dict()
+        output[layer_idx]['attention'] = tensor
+        output[layer_idx]['bonds_mat'] = bonds_mat
+        output[layer_idx]['filtered_tokens'] = filtered_tokens
+        output[layer_idx]['gold_tokens'] = gold_tokens
+
+    return output
+
+
 def main():
     sequences = ["CC1(C)C(C)(O)C1(C)O", "CC(O)C(C)(O)C(N)=O", "CC(C)C(C)(C)O"]  # gdb_62509, gdb_58097, gdb_1105
 
@@ -78,6 +97,7 @@ def main():
         output[layer_idx]['gold_tokens'] = gold_tokens
 
     torch.save(output, "linear_att.pth")
+
 
 
 if __name__ == "__main__":
