@@ -1,21 +1,21 @@
 from argparse import Namespace
 import torch.nn.functional as F
 
-from tokenizer.tokenizer import MolTranBertTokenizer
-from utils import normalize_smiles
+from linear_attention_rotary.tokenizer.tokenizer import MolTranBertTokenizer
+from linear_attention_rotary.utils import normalize_smiles
 import torch
 import shutil
 from torch import nn
-import args
+import linear_attention_rotary.args as args
 import os
 import getpass
 from datasets import load_dataset, concatenate_datasets, load_from_disk
 
 from fast_transformers.builders import TransformerEncoderBuilder
 from fast_transformers.masking import FullMask, LengthMask as LM
-from rotate_attention.rotate_builder import RotateEncoderBuilder as rotate_builder
+from linear_attention_rotary.rotate_attention.rotate_builder import RotateEncoderBuilder as rotate_builder
 import fast_transformers.attention.linear_attention
-import rotate_attention.linear_attention
+import linear_attention_rotary.rotate_attention.linear_attention
 
 from fast_transformers.feature_maps import Favor, GeneralizedRandomFeatures
 from functools import partial
@@ -241,7 +241,7 @@ def get_full_attention(molecule):
     mask = config.mask
 
     loader = None
-    tokenizer = MolTranBertTokenizer("bert_vocab.txt")
+    tokenizer = MolTranBertTokenizer("linear_attention_rotary/bert_vocab.txt")
     bert_model = get_bert(config, tokenizer)
 
     batch_total = 0
