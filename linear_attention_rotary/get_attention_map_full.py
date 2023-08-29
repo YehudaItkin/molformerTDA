@@ -232,7 +232,6 @@ def get_tokens_from_ids(input_ids, tokenizer):
 
 def get_linear_attention(molecule):
     config = args.parse_args()
-    print(config)
     model_path = config.seed_path
     config.device = "cuda" if torch.cuda.is_available() else "cpu"
     device = config.device
